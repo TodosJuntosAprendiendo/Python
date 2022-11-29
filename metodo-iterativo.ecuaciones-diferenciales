@@ -1,0 +1,131 @@
+#impor lar bibliotecas
+import numpy as np #operaciones con aálgebra, listas, diccionarios
+import matplotlib.pyplot as plt #para hacer gráficas
+from pylab import * #cálculo de vectores
+import csv #archivo de sálida tipo excel
+
+# información de la reacción
+print("Esquema de la cinetica enzimatica de los inhibidores irreversibles")
+print("Mecanismo quimico para inhibicion irreversible de la ornitina descarboxilasa por medio de DFMO.")
+print("Poulin, R., Lu, L., Ackermann, B., Bey, P., & Pegg, A. E. (1992).Mechanism of the irreversible inactivation of mouse ornithine decarboxylase by alpha-difluoromethylornithine. Characterization of sequences at the inhibitor and coenzyme binding sites. Journal of Biological Chemistry, 267(1), 150-158.")
+
+#Condiciones iniciales
+E0=float(input("Introducir concentracion inicial de E(t0):"))
+S0=float(input("Introducir concentracion inicial de S(t0):"))
+I0=float(input("Introducir concentracion inicial de I(t0):"))
+dt=float(input("Introducir valor de dt:"))
+
+print("Introduce los valores de las contantes de formacion del complejo: Enzima-Sustrato")
+k1=float(input("Introducir valor de k1:"))
+k_1=float(input("Introducir valor de k_1:"))
+
+print("Introdue los valores de las constantes de formacion de la enzima + producto")
+k2=float(input("Introducir valor de k2:"))
+k_2=float(input("Introducir valor de k_2:"))
+
+print("Introduce los valores de las constante de inhibicion del sustrato, para dar el complejo: Enzima-Inhibidor")
+kE1=float(input("Introducir valor de kE1:"))
+kE_1=float(input("Introducir valor de kE_1:"))
+
+print("Introduce los valores de las contantes de inhibicion del complejo: Enzima-Sustrato")
+kES1=float(input("Introducir valor de kES1:"))
+kES_1=float(input("Introducir valor de kES_1:"))
+
+print("Introduce el valor de la cosntante de inactivacion del sutrato")
+k_inc=float(input("Introducir valor de k_inc:"))
+
+# Numero de pasos
+print("Introduce el numero de pasos en el calculo")
+pasos=float(input("Introducir el numero de pasos:"))
+
+#nombre de los archivos
+print("Introduce el nombre de los archivos de salida")
+nombre=str(input("Introduce nombre del archivo:"))
+
+#Condiciones iniciales
+E=E0
+S=S0
+I=I0
+EI=0
+ES=0
+ESI=0
+EI_in=0
+P=0
+t=0
+
+#contador
+i=0
+
+#Guarda los datos en matriz de 9xi-pasos
+datos=np.array([[t,E,S,I,EI,ES,ESI,EI_in,P]])
+
+#Condiciones de calculo
+while i <= pasos:
+     t=t + dt
+     i=i + 1
+
+     dE=(-k1*E*S +k_1*ES -kE1*E*I +kE_1*EI +k2*ES -k_2*E*P)*dt
+     dS=(-k1*E*S +k_1*ES)*dt
+     dI=(-kE1*E*I +kE_1*EI -kES1*ES*I +kES_1*ESI)*dt
+     dEI=(-kE_1*EI +kE1*E*I -k_inc*EI*ESI)*dt
+     dES=(k1*E*S -k_1*ES +k_2*E*P -k_2*ES -kES1*ES*I +kES_1*ESI)*dt
+     dESI=(-k_inc*ESI*EI +kES1*ES*I -kES_1*ESI)*dt
+     dEI_in=(k_inc*(EI*ESI))*dt
+     dP=(k2*ES -k_2*E*P)*dt
+
+     E= E + dE
+     S= S + dS
+     I= I + dI
+     EI= EI + dEI
+     ES= ES + dES
+     ESI= ESI + dESI
+     EI_in= EI_in + dEI_in
+     P= P + dP
+
+     #Cada que se repite el bucle, registra en valor en la matriz
+     datos=np.append(datos, [[t,E,S,I,EI,ES,ESI,EI_in,P]],axis=0)
+
+#Guarda en un archivo para excel
+np.savetxt(nombre +".csv", datos, delimiter=',')
+
+#Agrego encabezados a el archivo .csv
+with open(nombre+".csv",'r+') as f:
+    r = csv.reader(f)
+    data = [line for line in r]
+with open(nombre+".csv",'r+') as f:
+    w = csv.writer(f)
+    w.writerow(['t','[E]','[S]','[I]','[EI]','[ES]','[ESI]','[EI_in]','[P]'])
+    w.writerows(data)
+
+#agrego detalles de calculo
+with open(nombre+".csv",'r+') as f:
+    r = csv.reader(f)
+    data = [line for line in r]
+with open(nombre+".csv",'r+') as f:
+    w = csv.writer(f)
+    w.writerow(["dt= "+str(dt)+"", "k1= "+str(k1)+"", "k_1= "+str(k_1)+"", "k2= "+str(k2)+"", "k_2= "+str(k_2)+"", "kE1= "+str(kE1)+"", "kE_1= "+str(kE_1)+"", "kES1= "+str(kES1)+"", "kES_1= "+str(kES_1)+"", "k_inc= "+str(k_inc)+"" ])
+    w.writerows(data)
+
+#Guarda en una grafica los datos
+grid() #genera una malla
+
+#Grafica los datos por posicion en la matriz y los etiqueta
+plt.plot(datos[:,0], datos[:,1], label="[E]")
+plt.plot(datos[:,0], datos[:,2], label="[S]")
+plt.plot(datos[:,0], datos[:,3], label="[I]")
+plt.plot(datos[:,0], datos[:,4], label="[EI]")
+plt.plot(datos[:,0], datos[:,5], label="[ES]")
+plt.plot(datos[:,0], datos[:,6], label="[ESI]")
+plt.plot(datos[:,0], datos[:,7], label="[EI_in]")
+plt.plot(datos[:,0], datos[:,8], label="[P]")
+
+#Define los que se va a escribir en los ejes
+plt.xlabel("Tiempo (s)", fontsize = 20)
+plt.ylabel("Concentracion", fontsize=20)
+
+#Genera un recuardro que asocia el color de linea con el reactivo y/o producto
+plt.legend(prop = {'size':10}, loc = 'upper left')
+
+#Guarda la figura
+plt.savefig(nombre +".png")
+plt.show()
