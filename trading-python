@@ -1,0 +1,877 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import yfinance as yf
+import pandas as pd
+import numpy as np
+from datetime import datetime, date, time, timedelta
+from random import randint
+import requests
+
+nombre_archivo = 'Empresas_flink'
+datos = pd.read_csv(nombre_archivo + '.csv', encoding='latin1')
+tickets = list(datos['Symbol'])
+tic = list(datos['Nombre'])
+print(tic)
+print(fvgl)
+
+try:
+    df_prob = yf.download(tickers='A', period="1wk",  interval="5m", prepost = True)
+except ConnectionError or TimeoutError:
+    print("Will retry again in a little bit")
+    time.sleep(randint(2500,3000))
+    df_prob = yf.download(tickers='A', period="1wk",  interval="5m", prepost = True)
+except requests.exceptions.ConnectionError:
+    print("Will retry again in a little bit")
+    time.sleep(randint(2500,3000))
+    df_levls = yf.download(tickers=ticket, period= '1wk', interval="1d", prepost = True)
+
+df_prob.reset_index(level = 0, inplace = True)
+df_prob["Datetime"] = pd.to_datetime(df_prob.Datetime).dt.strftime("%Y-%m-%d %H:%M")
+
+now_for = list(df_prob["Datetime"])[-1]
+now_for = datetime.strptime(now_for, "%Y-%m-%d %H:%M")
+str_data = list(df_prob["Datetime"])[0]
+str_data = datetime.strptime(str_data, "%Y-%m-%d %H:%M")
+
+nombre_salida = "Analisis" + nombre_archivo + str(now_for).split()[0] +  str(now_for).split()[1] + ".xlsx"
+print(nombre_salida)
+print("Los cálculos comienzan en la fecha:" + " " + str(str_data))
+
+print("Los cálculos terminan en la fecha:" + " " + str(now_for))
+
+#------ Nuevo DataFrame con los resultados
+Gan_perd = "Gan/perd" + "(%)"
+df_resultados = pd.DataFrame(columns=('Simbolo', 'Nombre', Gan_perd, 'Precio actual', 'Tend Fibo'))
+
+#"")Data fra,e para soporte y resistencia
+niveles = ['Simbolo', 'Nombre', 'Gan/Per(%)','Precio actual','nivel1', 'nivel2',
+'nivel3', 'nivel4', 'nivel5', 'nivel6', 'nivel7', 'nivel8', 'nivel9', 'nivel10',
+'nivel11', 'nivel12', 'nivel13', 'nivel14', 'nivel15', 'nivel16', 'nivel17', 'nivel18'
+, 'nivel19', 'nivel20', 'nivel21', 'nivel22', 'nivel23', 'nivel24', 'nivel25']
+
+df_lep = pd.DataFrame(columns=niveles)
+
+
+for ticket in tickets:
+
+    try:
+        df_levls = yf.download(tickers=ticket, period= '1y', interval="1d", prepost = True)
+    except ConnectionError or TimeoutError:
+        print("Will retry again in a little bit")
+        time.sleep(randint(2500,3000))
+        df_levls = yf.download(tickers=ticket, period= '1y', interval="1d", prepost = True)
+    except requests.exceptions.ConnectionError:
+        print("Will retry again in a little bit")
+        time.sleep(randint(2500,3000))
+        df_levls = yf.download(tickers=ticket, period= '1y', interval="1d", prepost = True)
+
+    df_levls['Sup/res'] = ' '
+
+    def isSupport(df_levls,i):
+      support = df_levls['Low'][i] < df_levls['Low'][i-1]  and df_levls['Low'][i] < df_levls['Low'][i+1] \
+      and df_levls['Low'][i+1] < df_levls['Low'][i+2] and df_levls['Low'][i-1] < df_levls['Low'][i-2]
+
+      return support
+
+    def isResistance(df_levls,i):
+      resistance = df_levls['High'][i] > df_levls['High'][i-1]  and df_levls['High'][i] > df_levls['High'][i+1] \
+      and df_levls['High'][i+1] > df_levls['High'][i+2] and df_levls['High'][i-1] > df_levls['High'][i-2]
+
+      return resistance
+
+    levels = []
+    for i in range(2,df_levls.shape[0]-2):
+      if isSupport(df_levls,i):
+        levels.append((i,df_levls['Low'][i]))
+      elif isResistance(df_levls,i):
+        levels.append((i,df_levls['High'][i]))
+
+    s =  np.mean(df_levls['High'] - df_levls['Low'])
+    def isFarFromLevel(l):
+      return np.sum([abs(l-x) < s  for x in levels]) == 0
+
+    levels = []
+    for i in range(2,df_levls.shape[0]-2):
+      if isSupport(df_levls,i):
+        l = df_levls['Low'][i]
+        if isFarFromLevel(l):
+          levels.append((i,l))
+
+      elif isResistance(df_levls,i):
+        l = df_levls['High'][i]
+        if isFarFromLevel(l):
+          levels.append((i,l))
+
+    levls = []
+    for level in levels:
+        levls.append(level[1])
+
+    levls = sorted(levls)
+    levls_rev = sorted(levls, reverse=True)
+    print(levls)
+    print(levls_rev)
+
+    try:
+        df = yf.download(tickers=ticket, start = str_data, end = now_for, interval="5m", prepost = True)
+    except ConnectionError or TimeoutError:
+        print("Will retry again in a little bit")
+        time.sleep(randint(2500,3000))
+        df = yf.download(tickers=ticket, start = str_data, end = now_for, interval="5m", prepost = True)
+    except requests.exceptions.ConnectionError:
+        print("Will retry again in a little bit")
+        time.sleep(randint(2500,3000))
+        df = yf.download(tickers=ticket, start = str_data, end = now_for, interval="5m", prepost = True)
+
+    df.reset_index(level = 0, inplace = True)
+    df["Datetime"] = pd.to_datetime(df.Datetime).dt.strftime("%Y-%m-%d %H:%M")
+    index = tickets.index(ticket)
+    print(index)
+
+    resultados = []
+    resultados.append(tickets[index])
+    resultados.append(datos['Nombre'][index])
+    date_ded = list(df["Datetime"])
+    print(len(date_ded))
+
+    if index == 0:
+        j = 5
+        for i in range(len(date_ded)-1,-1,-1):
+            i = date_ded[i]
+            i = i.split()[1]
+            df_resultados.insert(j,i, [],True)
+            j = j+1
+
+        print(df_resultados)
+        len(df_resultados.columns)
+
+#----Cáculo de Divirgencia/Convergencia-----
+
+    short_EMA = df.Close.ewm(span= 12, adjust = False).mean()
+    long_EMA = df.Close.ewm(span= 26, adjust = False).mean()
+    MACD = short_EMA - long_EMA
+    signal = MACD.ewm(span=9, adjust = False).mean()
+
+#---- Crar dos columnas nuvas
+    df['MACD'] = MACD
+    df['Signal Line'] = signal
+
+#-----Crear una función de copra vnta d acurdo con MACD
+    def buy_sell_MCDA(signal):
+        Buy_MCDA = []
+        Sell_MCDA = []
+        flag = -1
+
+        for i in range(0, len(signal)):
+            a = " "
+            if signal['MACD'][i] > signal['Signal Line'][i]:
+                Sell_MCDA.append(a)
+                if flag !=1:
+                    Buy_MCDA.append(signal['Close'][i])
+                    flag = 1
+                else:
+                    Buy_MCDA.append(a)
+            elif signal['MACD'][i] < signal['Signal Line'][i]:
+                Buy_MCDA.append(a)
+                if flag !=0:
+                    Sell_MCDA.append(signal['Close'][i])
+                    flag = 0
+                else:
+                    Sell_MCDA.append(a)
+            else:
+                Buy_MCDA.append(a)
+                Sell_MCDA.append(a)
+
+        return(Buy_MCDA, Sell_MCDA)
+
+#------Creat buy and sell coulumn
+
+    a = buy_sell_MCDA(df)
+    df['Buy_Signal_MCDA'] = a[0]
+    df['Sell_Signal_MCDA'] = a[1]
+
+#-------Cálculo de RSI---------#
+    b = " "
+    df['Up Move'] = b
+    df['Down Move'] = b
+    df['Average Up'] = b
+    df['Average Down'] = b
+    df['RS'] = b
+    df['RSI'] = b
+
+    #-----Calculate Up move and Down m0ve
+    for x in range(1, len(df)):
+        df['Up Move'][x] = 0
+        df['Down Move'][x] = 0
+
+        if df['Adj Close'][x] > df['Adj Close'][x-1]:
+            df['Up Move'][x] = df['Adj Close'][x] - df['Adj Close'][x-1]
+
+        if df['Adj Close'][x] < df['Adj Close'][x-1]:
+            df['Down Move'][x] = abs(df['Adj Close'][x] - df['Adj Close'][x-1])
+
+    #---- Calculate initial Averaje Up and Down, RS and RSI
+    df['Average Up'][14] = df['Up Move'][1:15].mean()
+    df['Average Down'][14] = df['Down Move'][1:15].mean()
+    df['RS'][14] = df['Average Up'][14] / df['Average Down'][14]
+    df['RSI'][14] = 100 - (100/(1+df['RS'][14]))
+
+    #----- Calculate rest of Averaje up, Averaje Down, RS and , RSI
+    for x in range(15, len(df)):
+        df['Average Up'][x] = (df['Average Up'][x-1]*13 + df['Up Move'][x])/14
+        df['Average Down'][x] = (df['Average Down'][x-1]*13 + df['Down Move'][x])/14
+        df['RS'][x] = df['Average Up'][x] / df['Average Down'][x]
+        df['RSI'][x] = 100 - (100/(1+ df['RS'][x]))
+
+#----- Crate buy and shell signal of RSI
+    c = " "
+    df['Long Tomorrow'] = c
+    df['Buy Signal'] = c
+    df['Sell Signal'] = c
+    df['Buy RSI'] = c
+    df['Sell RSI'] = c
+    df['Strategy'] = c
+
+#---- Calculate the buy and sell signals
+    for x in range(15, len(df)):
+
+    #------ Calculate "Long Tomorrow" coulumn
+        if ((df['RSI'][x] <= 30) and (df['RSI'][x-1] > 30)):
+            df['Long Tomorrow'][x] = True
+        elif ((df['Long Tomorrow'][x-1] == True) and (df['RSI'][x] <= 70)):
+            df['Long Tomorrow'][x] = True
+        else:
+            df['Long Tomorrow'][x] = False
+
+    #----- Calculate Buy Signal Coulumn
+        if ((df['Long Tomorrow'][x] == True) and (df['Long Tomorrow'][x-1] == False)):
+            df['Buy Signal'][x] = df['Adj Close'][x]
+            df['Buy RSI'][x] = df['RSI'][x]
+
+    #----- Calculate Sell Signal Coulumn
+        if ((df['Long Tomorrow'][x] == False) and (df['Long Tomorrow'][x-1] == True)):
+            df['Sell Signal'][x] = df['Adj Close'][x]
+            df['Sell RSI'][x] = df['RSI'][x]
+
+#------ Calcuate strategy performance
+    df['Strategy'][15] = df['Adj Close'][15]
+
+    for x in range(16, len(df)):
+        if df['Long Tomorrow'][x-1] == True:
+            df['Strategy'][x] = df['Strategy'][x-1] * (df['Adj Close'][x]/df['Adj Close'][x-1])
+        else:
+            df['Strategy'][x] = df['Strategy'][x-1]
+
+#---------Calcuate the simpling moving average, standar desviation, upper band and low band
+#---------  Get the time period (20 days)
+    period = 20
+    #Calculate the Simpling Moving Average
+    df['SMA'] = df['Close'].rolling(window=period).mean()
+    #Get the standar desviatio
+    df['STD'] = df['Close'].rolling(window=period).std()
+    #Calculate the upper Bollinger band
+    df['Upper'] = df['SMA'] + (df['STD']*2)
+    #Calculate the upper Bollinger band
+    df['Lower'] = df['SMA'] - (df['STD']*2)
+
+#----New DataFrame with dates of bands
+
+    df_bands = df[period -1:]
+
+    #--Crate function buy and shell
+    def get_signal_band(data):
+
+        buy_signal = []
+        sell_signal = []
+
+        for i in range(len(data['Close'])):
+            d = " "
+            if data['Close'][i] > data['Upper'][i]: #Then you should sell
+                buy_signal.append(d)
+                sell_signal.append(d)
+            elif data['Close'][i] < data['Lower'][i]: #Then you should buy
+                buy_signal.append(df['Close'][i])
+                sell_signal.append(d)
+            else:
+                buy_signal.append(d)
+                sell_signal.append(d)
+
+        return(buy_signal, sell_signal)
+
+#------ Create a two new coulomns
+
+    b = get_signal_band(df)
+    df['Buy bands'] =  b[0]
+    df['Sell bands'] = b[1]
+
+    df.reset_index(level = 0, inplace = True)
+    df["Datetime"] = pd.to_datetime(df.Datetime).dt.strftime("%Y-%m-%d %H:%M")
+
+#----- Cálculotendencia de finonaci
+    count = 0
+    suma = 0
+    date=' '
+
+    # Guardar últimos m valores de precios en una arreglo
+    m=len(list(df['Open']))
+
+    List_precio= list(df['Open'][0:m])
+    List_fechas=list(str(df['Datetime'][0:m]))
+    List_Volume=list(str(df['Volume'][0:m]))
+
+    # ciclo para vals max y min.
+    for i in range(0, m):
+        suma = float(df['Open'][i]) + suma
+
+    # Calcula valor Maximo
+    max= 0
+    max_count=0
+    min_count=0
+    for i in range(0, m):
+     valor = df['Open'][i]
+     if valor > max:
+         max=valor
+         max_count=i # identifica en que lugar esta el val. maximo
+    print("Valor maximo: " + str(max))
+
+    # Calcula valor Minimo
+    min=200
+    for j in range(0, m):
+     valormin = df['Open'][j]
+     if valormin < min:
+         min=valormin
+         min_count=j # identifica en que lugar esta el val. minimo
+    print("Valor minimo: " + str(min))
+
+    # compara si Vmax esta despues que Vmin,
+    # Calcula Diferencias entre Val Max y Min
+    dif= (max-min)
+    print ("Diferencia Vmax-Vmin:"+ str(dif))
+    print (dif)
+    # Calcula Niveles de Fibonacci
+    nivel1 = (max - 0.236*dif)
+    nivel2 = (max - 0.382*dif)
+    nivel3 = (max - 0.50*dif)
+    nivel4 = (max - 0.618*dif)
+    print ("Nivel 1 de Fibo (23.6%):" +str(nivel1))
+    print ("Nivel 2 de Fibo (38.2%):" +str(nivel2))
+    print ("Nivel 3 de Fibo: (50%)" +str(nivel3))
+    print ("Nivel 4 de Fibo: (61.8%)" +str(nivel4))
+    # plt.xlabel("Ultimos M valores ")
+    if max_count>min_count:
+        tendencia = "A la alza"
+    if min_count>max_count:
+        tendencia = "A la baja"
+
+    resultados.append(tendencia)
+#-------- Aquí acabo el rastreo de señales
+
+#------Recoro la lista del ultimo dato hasta el primero para encontrar instrucciones adecuadas
+    Senales = []
+#------Obtengo el porcentaje de subida o bajada de precio de la acción
+    dat = list(df["Datetime"])[-1]
+    now_open = list(df["Close"])[-1]
+    open = list(df["Close"])
+
+    for j in range(len(open)-1, -1, -1):
+        dato = df["Datetime"][j]
+        now_open_af = df["Close"][j]
+
+        if dato.split()[0] != dat.split()[0]:
+            print("Dentro del bloque para calcular porcentaje")
+            print(dato) #now_open_af------100
+            print(dat) # now_open ------- X
+            porcent = (now_open*100)/ now_open_af
+            print(porcent)
+            if porcent > 100:
+                porc =  porcent - 100
+                porc = "{:.2f}".format(porc)
+                porc = float(porc)
+            elif porcent < 100:
+                porc = porcent + -100
+                porc = "{:.2f}".format(porc)
+                porc = float(porc)
+            elif porcent == 100:
+                porc = 0.00
+                porc = "{:.2f}".format(porc)
+                porc = float(porc)
+
+            resultados.insert(2, porc)
+            break
+
+    precio_hoy = list(df["Close"])[-1]
+    resultados.insert(3, precio_hoy)
+
+####-------Generando una hoja que me muestre los niveles de soporte y resistencia#####
+    res_lev = resultados.copy()
+    res_lev.pop(-1)
+
+    print(levls, len(levls))
+    for lev in levls_rev:
+        res_lev.append(lev)
+
+    print(len(res_lev), len(niveles))
+    b = len(res_lev)
+    if b <= len(niveles):
+        while b <= len(niveles)-1:
+            res_lev.append(' ')
+            b = b +1
+
+    print(res_lev,len(res_lev), len(niveles))
+    drt = tickets.index(ticket)
+    df_lep.loc[drt] = res_lev
+    print('------------------------------------------------------------------')
+    print(df_lep)
+    print('------------------------------------------------------------------')
+
+#----- Obtengo las señales de RSI, MCDA, BAN
+
+    for levl in levls:
+        if levl <= list(df['Open'])[-1]:
+            soporte = levl
+        if levl >= list(df['Open'])[-1]:
+            resistencia = levl
+            break
+        if list(df['Open'])[-1] >= levls[-1]:
+            soporte = levls[-1]
+            resistencia = list(df['Open'])[-1] + 100
+
+    print(soporte, resistencia, list(df['Open'])[-1])
+
+    dd = list(df['Datetime'])
+    for i in reversed(date_ded):
+        j = dd.index(i)
+
+        try:
+            if df['Buy RSI'][j] != " ":
+                RSI = "Buy RSI:" + " " + "{:.1f}".format(df['Buy RSI'][j])
+            elif df['Sell RSI'][j] != " ":
+                RSI = "Sell RSI:" + " " + "{:.1f}".format(df['Sell RSI'][j])
+            else: #Si la celda no esta vacia se ejecua esto
+                RSI = " "
+
+            if df["Buy_Signal_MCDA"][j] != " ":
+                MCDA = "Buy MCDA:" + " " + "{:.1f}".format(df['Buy_Signal_MCDA'][j])
+            elif df["Sell_Signal_MCDA"][j] != " ":
+                MCDA = "Sell MCDA:" + " " + "{:.1f}".format(df['Sell_Signal_MCDA'][j])
+            else: #Si la celda no esta vacia se ejecua esto
+                MCDA = " "
+
+            if df["Buy bands"][j] != " ":
+                BANDS = "Buy BANDS:" + " " + "{:.1f}".format(df['Buy bands'][j])
+            if df["Sell bands"][j] != " ":
+                BANDS = "Sell BANDS:" + " " + "{:.1f}".format(df['Sell bands'][j])
+            else: #Si la celda no esta vacia se ejecua esto
+                BANDS = " "
+
+            if df["Open"][j] <= soporte:
+                sop_res = 'soporte roto' + ' ' +  "{:.1f}".format(soporte) + '-' + str("{:.2f}".format(df["Open"][j]))
+            elif df["Open"][j] >= resistencia:
+                sop_res = 'resistencia rota' + ' ' +  "{:.1f}".format(resistencia) + '-' + str("{:.2f}".format(df["Open"][j]))
+            else:
+                sop_res = ' '
+
+            for levl in levls:
+                if levl <= list(df['Open'])[j]:
+                    soporte = levl
+                if levl >= list(df['Open'])[j]:
+                    resistencia = levl
+                    break
+                if list(df['Open'])[j] >= levls[-1]:
+                    soporte = levls[-1]
+                    resistencia = list(df['Open'])[j] + 100
+
+            if RSI and MCDA and BANDS and sop_res != " ":
+                Senal = sop_res  + ' ' + RSI + " " + MCDA + " " + BANDS
+            else:
+                Senal = " "
+
+            resultados.append(Senal)
+
+        except KeyError:
+            num_col_res = len(df_resultados.axes[1])
+            b = len(resultados)
+            while b <= num_col_res -1:
+                resultados.append("KeyError")
+                b = b + 1
+
+    col_names = list(df_resultados)
+    if len(resultados) <= len(col_names):
+        print('if len(resultados) != len(df_resultados.axes[1]):')
+        num_col_res = len(df_resultados.axes[1])
+        b = len(resultados)
+        while b <= num_col_res -1:
+            resultados.append("KeyError")
+            b = b + 1
+
+    if len(resultados) > len(col_names):
+        print('len(resultados) >= len(col_names)')
+        num_col_res = len(df_resultados.axes[1])
+        b = len(resultados)
+        while b >= num_col_res +1:
+            resultados.pop(b-1)
+            d = resultados[-1]
+            b = b -1
+
+    print(len(resultados), len(col_names))
+    df_resultados.loc[index + 1] = resultados
+    print(df_resultados)
+
+df_resultados.to_csv('datos_chek.csv')
+
+#------ Nuevo DataFrame con los resultados
+col_names = list(df_resultados)
+df_orden = pd.DataFrame(columns=col_names)
+#------ Ordenando los datos segun el orden de aparición de las señales
+count = 1
+nombres =[]
+simbolos = list(df_resultados['Simbolo'])
+print("va a iniciar el cálculo")
+
+for col_name, k in zip(col_names[5 :-1], range(len(col_names))):
+    print("recorriendo a columna" + ' ' + col_name)
+    datos_col = list(df_resultados.iloc[:, k+5])
+    numeros = []
+    for i, j in zip(datos_col, simbolos):
+
+        if i !=  " ":
+            num = datos_col.index(i)
+
+            if num in numeros:
+                index = simbolos.index(j)
+            else:
+                index = datos_col.index(i)
+                numeros.append(i)
+
+            datos = df_resultados.iloc[index].to_numpy(copy=True)
+            datos = list(datos)
+            nombre = datos[1]
+
+            if nombre in nombres:
+                pass
+            else:
+                df_orden.loc[count] = datos
+                nombres.append(datos[1])
+                count = count + 1
+    print(df_orden)
+#------ Revisando y añaniendo las filas que no presenten señales en el lapso consultado
+names = list(df_resultados['Nombre'])
+for name in names:
+    if name in nombres:
+        print("El nombre" + name + "Esta dentro de la lista")
+        pass
+    else:
+        print("El nombre" + name + "NO esta dentro de la lista")
+        index = names.index(name)
+        print(index)
+        datos = df_resultados.iloc[index].to_numpy(copy=True)
+        df_orden.loc[count] = datos
+        count = count + 1
+
+df_orden.to_csv('orale.csv')
+
+print(df_orden)
+
+#---- Ordenando en dos nuevos dataframe de compra y venta por separado
+df_buy = pd.DataFrame(columns=col_names)
+df_sell = pd.DataFrame(columns=col_names)
+
+print('--------------------Acomodando lo datos en bventa y comra--------------------------------')
+count_buy = 0
+count_sell = 0
+nombres = []
+
+print(df_orden)
+data = list(df_orden['Simbolo'])
+simbolos = list(df_orden['Simbolo'])
+col_names = list(df_orden)
+
+for col_name, k in zip(col_names[5:-1], range(len(col_names))):
+    print("recorriendo a columna" + ' ' + col_name)
+    datos_col = list(df_orden.iloc[:, k+6])
+    print(datos_col)
+
+    for i, j in zip(datos_col, simbolos):
+        if i != ' ':
+            i = str(i)
+            dato_split = i.split()
+            index = data.index(j)
+
+            nombre = list(df_orden['Nombre'])[index]
+
+            if dato_split[0] == "Buy":
+                if nombre in nombres:
+                    print("El nombre" + " " + nombre + " " + "esta en la lista")
+                    pass
+                else:
+                    print("El nombre" + " " + nombre + " " + "NO esta en la lista")
+                    datos = df_orden.iloc[index].to_numpy(copy=True)
+                    datos = list(datos)
+                    df_buy.loc[count_buy] = datos
+                    nombres.append(nombre)
+                    count_buy = count_buy + 1
+
+            if len(dato_split) > 3:
+                if dato_split[3] == "Buy":
+                    nombre = list(df_orden['Nombre'])[index]
+                    if nombre in nombres:
+                        print("El nombre" + " " + nombre + " " + "esta en la lista")
+                        pass
+                    else:
+                        print("El nombre" + " " + nombre + " " + "NO esta en la lista")
+                        datos = df_orden.iloc[index].to_numpy(copy=True)
+                        datos = list(datos)
+                        df_buy.loc[count_buy] = datos
+                        nombres.append(nombre)
+                        count_buy = count_buy + 1
+
+
+            if dato_split[0] == "Sell":
+                if nombre in nombres:
+                    pass
+                else:
+                    datos = df_orden.iloc[index].to_numpy(copy=True)
+                    datos = list(datos)
+                    df_sell.loc[count_sell] = datos
+                    nombres.append(nombre)
+                    count_sell = count_sell + 1
+
+            if len(dato_split) > 3:
+                if dato_split[3] == "Sell":
+                    nombre = list(df_orden['Nombre'])[index]
+                    if nombre in nombres:
+                        pass
+                    else:
+                        datos = df_orden.iloc[index].to_numpy(copy=True)
+                        datos = list(datos)
+                        df_sell.loc[count_sell] = datos
+                        nombres.append(nombre)
+                        count_sell = count_sell + 1
+
+#-----Comprobado el estado de las inversiones
+df_buy_sell = pd.read_csv('flink_buy_sell.csv', encoding='latin1')
+col_names = ['Simbolo',	'Nombre', 'Gan/perd(%)', 'Precio actual', 'Tend Fibo']
+df_b_s = pd.DataFrame(columns=col_names)
+df_pred = pd.read_csv('Analisis_google.csv', encoding='latin1')
+
+sin = list(df_pred['Simbolo'])
+pred = list(df_pred['Predicción'])
+simbolos = list(df_buy_sell['Symbol'])
+simbolos_ord = list(df_orden['Simbolo'])
+st_buy_A = list(df_buy['Simbolo'])
+st_sell_A = list(df_sell['Simbolo'])
+df_b_s['Veredicto'] = ' '
+df_b_s['Predicción'] = ' '
+df_b_s['G/P Predic'] = ' '
+print(df_b_s)
+
+count = 1
+df_orden = df_orden.reset_index()
+df_orden.drop(['index'], axis=1, inplace=True)
+print(df_orden)
+for simbol in simbolos:
+
+    index = simbolos_ord.index(simbol)
+    ind = sin.index(simbol)
+    datos = df_orden.loc[index].to_numpy(copy=True)
+    datos = list(datos)[0:5]
+    predi = pred[ind]
+
+    if simbol in st_buy_A:
+        ver = 'Continuar inversión'
+    elif simbol in st_sell_A:
+        ver = 'Vender inversión'
+    else:
+        ver = 'N/A'
+
+    print(simbol)
+    print(predi)
+    print(ver)
+
+    datos.append(ver)
+    datos.append(predi)
+
+    p = datos[-1]
+    h = datos[3]
+    g_p = p - h
+    datos.append(g_p)
+    df_b_s.loc[count] = datos
+    count = count +1
+    print(df_b_s)
+
+#-------Ordenando los datos por su porcentaje de cambio
+df_resultados = df_resultados.reset_index()
+df_resultados.drop(['index'], axis=1, inplace=True)
+porcent = list(df_resultados['Gan/perd(%)'])
+porc = sorted(porcent, reverse=True)
+col_names = list(df_resultados)
+df_men_may = pd.DataFrame(columns=col_names)
+
+vx =[]
+count = 1
+print(df_resultados)
+for i in porc:#dat= porc
+	if i in vx:
+		print('El dato ya se tomo en cuenta')
+	else:
+		vx.append(i)
+		cont = porc.count(i)
+		print(i, vx, cont)
+		if cont >= 2:
+			ubicaciones = []
+			for n in range(len(porcent)):
+			    if porcent[n] == i:
+			       ubicaciones.append(n)
+			for u in ubicaciones:
+				index = u
+				print(u, ubicaciones)
+				datos = df_resultados.loc[index].to_numpy(copy=True)
+				datos = list(datos)
+				df_men_may.loc[count] = datos
+				count = count +1
+		else:
+			inde = porcent.index(i)
+			print(i, inde)
+			datos = df_resultados.loc[inde].to_numpy(copy=True)
+			datos = list(datos)
+			df_men_may.loc[count] = datos
+			count = count +1
+
+#-----Escribiendo los datos en hojas separadas de un libro de excel
+writer = pd.ExcelWriter(nombre_salida)
+df_men_may.to_excel(writer, sheet_name="Datos_mayor_a_menor", index=False)
+df_lep.to_excel(writer, sheet_name="Datos_soporte_resistencia", index=False)
+df_orden.to_excel(writer, sheet_name="Datos_ordenados", index=False)
+df_buy.to_excel(writer, sheet_name="Datos_compra", index=False)
+df_sell.to_excel(writer, sheet_name="Datos_venta", index=False)
+df_b_s.to_excel(writer, sheet_name="Analisis_cuntinuidad", index=False)
+writer.save()
+writer.close()
+
+#---------Agregando clores a las celdas según su valor
+import openpyxl
+from openpyxl.styles import PatternFill
+#Analisis_del_pru2020-12-28 17:10:00.xlsx
+excel_document = openpyxl.load_workbook(nombre_salida)
+print (excel_document.get_sheet_names())
+sheet_buy = excel_document.get_sheet_by_name('Datos_compra')
+sheet_sell = excel_document.get_sheet_by_name('Datos_venta')
+
+row_count = sheet_buy.max_row
+column_count = sheet_buy.max_column
+numeros = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+leters = ['A','B','C','D','E','F', 'G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
+
+colum_va = []
+i=0
+k=0
+l=0
+m=0
+
+for j in range(column_count):
+	if j <= len(leters)-1:
+		let = leters[j]
+		colum_va.append(let)
+	if len(leters)-1 <= j <= 700:
+		let = leters[k] + leters[i]
+		i = i +1
+		colum_va.append(let)
+	if i >= 26:
+		i=0
+		k=k+1
+	if j >= 700:
+		let = leters[m] + colum_va[l+26]
+		colum_va.append(let)
+		l=l+1
+		print(l)
+	if l >= 676:
+		l=0
+		m=m+1
+
+colum_va.pop(26)
+colum_va.insert(26, 'AA')
+print(colum_va)
+
+list_aux = ['1']* column_count
+print(column_count)
+
+orange = 'FFA500'
+blue = 'AFEEEE'
+green = '7CFC00'
+salmon = 'FA8072'
+yellow = 'FFFF00'
+aqua = '00FFFF'
+rosa = 'FF00FF'
+red = 'FF0000' # yellow, aqua, rosa, red
+
+#-------Coloreando la oja de compra--------------------
+print('#-------Coloreando la hoja de compra--------------------')
+for row in sheet_buy.iter_rows():
+    for cell in row:
+        val = cell.value
+        cell_val = str(cell)
+        cell_val = cell_val.split('.')
+        cell_val = cell_val[1].split('>')
+        cell_val = cell_val[0]
+        if val != " ":
+            val = str(val)
+            val = val.split()
+            if len(val) >= 2: #soporte roto, resistencia rota, area_de soporte, area_de resistencia
+                val = val[0] + val[1] # yellow, aqua, rosa, red
+                if val == "BuyMFI:":
+                    sheet_buy[cell_val].fill = PatternFill(fgColor= salmon, bgColor=salmon, fill_type='solid')
+                elif val == "BuyBANDS:":
+                    sheet_buy[cell_val].fill = PatternFill(fgColor= green, bgColor=green, fill_type='solid')
+                elif val == "BuyMCDA:":
+                    sheet_buy[cell_val].fill = PatternFill(fgColor= orange, bgColor=orange, fill_type='solid')
+                elif val == "soporteroto":
+                    sheet_buy[cell_val].fill = PatternFill(fgColor= yellow, bgColor=yellow, fill_type='solid')
+                elif val == "resistenciarota":
+                    sheet_buy[cell_val].fill = PatternFill(fgColor= aqua, bgColor=aqua, fill_type='solid')
+                elif val == "BuyRSI:":
+                    for leter in leters:
+                        cell_val = cell_val.replace(leter, "")
+                        print(cell_val)
+                    for i in colum_va:
+                        print(i)
+                        cell_valu = i + cell_val
+                        print(cell_valu)
+                        sheet_buy[cell_valu].fill = PatternFill(fgColor= blue, bgColor=blue, fill_type='solid')
+                        cell_valu = ' '
+
+print("Calculo en la hoha de venta")
+for row in sheet_sell.iter_rows():
+    for cell in row:
+        val = cell.value
+        cell_val = str(cell)
+        cell_val = cell_val.split('.')
+        cell_val = cell_val[1].split('>')
+        cell_val = cell_val[0]
+        if val != " ":
+            val = str(val)
+            val = val.split()
+            if len(val) >= 2:
+                val = val[0] + val[1]
+                if val == "SellMFI:":
+                    sheet_sell[cell_val].fill = PatternFill(fgColor= salmon, bgColor=salmon, fill_type='solid')
+                elif val == "SellBANDS:":
+                    sheet_sell[cell_val].fill = PatternFill(fgColor= green, bgColor=green, fill_type='solid')
+                elif val == "SellMCDA:":
+                    sheet_sell[cell_val].fill = PatternFill(fgColor= orange, bgColor=orange, fill_type='solid')
+                elif val == "soporteroto":
+                    sheet_sell[cell_val].fill = PatternFill(fgColor= yellow, bgColor=yellow, fill_type='solid')
+                elif val == "resistenciarota":
+                    sheet_sell[cell_val].fill = PatternFill(fgColor= aqua, bgColor=aqua, fill_type='solid')
+                elif val == "SellRSI:":
+                    for leter in leters:
+                        cell_val = cell_val.replace(leter, "")
+                        print(cell_val)
+                    for i in colum_va:
+                        cell_valu = i + cell_val
+                        print(cell_valu)
+                        sheet_sell[cell_valu].fill = PatternFill(fgColor= blue, bgColor=blue, fill_type='solid')
+                        cell_valu = ' '
+
+print('------------------------------------------------------')
+print(nombre_salida)
+print('------------------------------------------------------')
+excel_document.save(nombre_salida)
