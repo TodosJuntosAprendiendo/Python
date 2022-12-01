@@ -1,0 +1,48 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+from sympy import *
+import sympy
+from sympy.abc import t, n
+import matplotlib.pyplot as plt
+import numpy as np
+from sympy.utilities.lambdify import lambdify
+
+T = float(input("Introducir periodo:"))
+f_t = input("Introducir funcion:")
+x = sympy.Symbol(f_t)
+
+ao = (2/T) * (Integral(f_t, (t, -T/2, T/2)).doit())
+print("\n"+"a0 = ")
+pprint(ao)
+
+an = (2/T) * (integrate(x*cos((2*n*pi)/T * t), (t, -T/2, T/2)))
+print("\n"+"an = ")
+pprint(an)
+
+bn = (2/T) * (Integral((x*sin((2*n*pi)/T * t)), (t, -T/2, T/2)).doit())
+print("\n"+"bn = ")
+pprint(bn)
+
+print ("\n"+"f(x) = ")
+
+armonicos = 100
+serie = (ao/2)
+for i in range(1, armonicos + 1):
+    serie = serie + (an*cos(2*n*t)).subs(n, i)
+for j in range(1, armonicos + 1):
+    serie = serie + (bn*sin(2*n*t)).subs(n, j)
+
+pprint(serie)
+
+evalfunc = lambdify(t, f_t, modules=['numpy'])
+evalfurier = lambdify(t, serie, modules=['numpy'])
+
+t = np.linspace(-T, T, 100000)
+plt.plot(t, evalfunc(t), label='f(t)')
+plt.plot(t, evalfurier(t), label='Transformada')
+plt.xlabel('t')
+plt.ylabel('f(t)')
+plt.legend(loc='best')
+plt.grid()
+plt.show()
