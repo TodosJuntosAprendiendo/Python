@@ -1,0 +1,513 @@
+#!/usr/bin/env python
+#-*-coding:utf-8-*-
+
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import  r2_score
+import matplotlib.pyplot as plt
+
+# lectura del archivo excel usando la función pd.read_excel
+print("Leyendo el libro...")
+print("Leyendo la primer hoja...")
+
+dataframe = pd.read_excel("datos.xlsx",  sheet_name="conformeros")
+print(dataframe.head())  # esto te imprime los primeros 5 elementos
+
+p_sflow = dataframe['PSFLOW'].values.reshape(-1,1) #definimos los datos en un array
+p_lap = dataframe['PLAP'].values.reshape(-1,1)
+p_max = dataframe['MÁXIMO'].values.reshape(-1,1)
+p_min = dataframe['MÍNIMO'].values.reshape(-1,1)
+
+linear_regressor_1 = LinearRegression()
+regresion_1 = linear_regressor_1.fit(p_sflow, p_lap) #Ya creamos la regresión lineal
+p_lap_pred = linear_regressor_1.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_1= r2_score(p_lap, p_lap_pred) #Cálculando el valor de R^2
+r_2_1 = "%.4f" % r2_1 #Ajustando el valor de un numero a un numero en particular de datos
+label_reg_1 = r"$r^2$ = " + "" +  str(r_2_1)
+print("coeficinete r^2 de la primer regresion:" +""+ label_reg_1)
+
+linear_regressor_2 = LinearRegression()
+regresion_2 = linear_regressor_2.fit(p_sflow, p_max)
+p_max_pred = linear_regressor_2.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_2= r2_score(p_lap, p_max_pred)
+r_2_2 = "%.4f" % r2_2
+label_reg_2 = r"$r^2$ = " + "" +  str(r_2_2)
+print("coeficinete r^2 de la segunda regresion:" +""+ label_reg_2)
+
+
+linear_regressor_3 = LinearRegression()
+regresion_3 = linear_regressor_3.fit(p_sflow, p_min)
+p_min_pred = linear_regressor_3.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_3= r2_score(p_lap, p_min_pred)
+r_2_3 = "%.4f" % r2_3
+label_reg_3 = r"$r^2$ = " + "" +  str(r_2_3)
+print("coeficinete r^2 de la tercer regresion:" +""+label_reg_3)
+
+fig = plt.figure()
+plt.grid()
+plt.scatter(dataframe['PSFLOW'], dataframe['PLAP'],label=" "r"$\nabla^2 \rho$ promedio")
+plt.plot(p_sflow, p_lap_pred, color='royalblue')
+texto1 = plt.text(25, 9, label_reg_1, color= 'royalblue', fontsize = 18) #Poner texto dentro de l imagen
+plt.scatter(dataframe['PSFLOW'], dataframe['MÁXIMO'], color='darkorange',label="  "r"$\nabla^2 \rho$ maximos")
+plt.plot(p_sflow, p_max_pred, color='darkorange')
+texto2 = plt.text(25, 8, label_reg_2, color= 'darkorange', fontsize = 18)
+plt.scatter(dataframe['PSFLOW'], dataframe['MÍNIMO'], color='green',label=" "r"$\nabla^2 \rho$ minimos")
+plt.plot(p_sflow, p_min_pred, color='green')
+texto3 = plt.text(25, 7, label_reg_3, color= 'green', fontsize = 18)
+plt.xlabel("Flujo de corriente eléctrica ($x10^{-3}$) / A", fontsize=12)
+plt.ylabel("Valores del laplaciano", fontsize=12)
+plt.legend(prop = {'size':10}, loc = 'upper left')
+plt.savefig("p_lap_conformeros" + ".png")
+plt.show()
+
+#######################################################################################
+print("Leyendo la segunda hoja...")
+
+dataframe = pd.read_excel("datos.xlsx",  sheet_name="velocidad")
+print(dataframe.head())  # esto te imprime los primeros 5 elementos
+
+v_electron = dataframe['Ve_J'].values.reshape(-1,1)
+min_max = dataframe['MÍN_MÁX'].values.reshape(-1,1)
+
+linear_regressor_1 = LinearRegression()
+regresion_1 = linear_regressor_1.fit(v_electron, min_max)
+m = linear_regressor_1.coef_ #Pendiente de tu regrision la regresión lineal
+b = linear_regressor_1.intercept_ #Ordenada al origen
+
+v_electron_pred = m * v_electron + b #Predigo el valor promedio del laplaciano
+print(v_electron_pred)
+
+r2_1= linear_regressor_1.score(v_electron, min_max)
+r_2_1 = "%.4f" % r2_1
+label_reg_1 = r"$r^2$ = " + "" +  str(r_2_1)
+print("coeficinete r^2 de la primer regresion:" +""+ label_reg_1)
+
+plt.grid()
+plt.scatter(dataframe['Ve_J'], dataframe['MÍN_MÁX'], color='green',label=" "r"$\nabla^2 \rho$ promedio")
+plt.plot(v_electron, v_electron_pred, color='green')
+plt.ylabel("Valores del laplaciano", fontsize=12)
+plt.xlabel("Velocidad de los electrones / m/s", fontsize=12)
+texto1 = plt.text(0, 7, label_reg_1, color= 'green', fontsize = 18)
+plt.legend(prop = {'size':10}, loc = 'upper left')
+plt.savefig("v_electron" +".png")
+plt.show()
+
+###############################################################333
+print("Leyendo la tercer hoja...")
+
+dataframe = pd.read_excel("datos.xlsx",  sheet_name="Ni_2mas")
+print(dataframe.head())  # esto te imprime los primeros 5 elementos
+
+p_sflow = dataframe['PSFLOW'].values.reshape(-1,1) #definimos los datos en un array
+p_lap = dataframe['PLAP'].values.reshape(-1,1)
+p_max = dataframe['MÁXIMO'].values.reshape(-1,1)
+p_min = dataframe['MÍNIMO'].values.reshape(-1,1)
+
+linear_regressor_1 = LinearRegression()
+regresion_1 = linear_regressor_1.fit(p_sflow, p_lap)
+p_lap_pred = linear_regressor_1.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_1= r2_score(p_lap, p_lap_pred)
+r_2_1 = "%.4f" % r2_1
+label_reg_1 = r"$r^2$ = " + "" +  str(r_2_1)
+print("coeficinete r^2 de la primer regresion:" +""+ label_reg_1)
+
+linear_regressor_2 = LinearRegression()
+regresion_2 = linear_regressor_2.fit(p_sflow, p_max)
+p_max_pred = linear_regressor_2.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_2= r2_score(p_lap, p_max_pred)
+r_2_2 = "%.4f" % r2_2
+label_reg_2 = r"$r^2$ = " + "" +  str(r_2_2)
+print("coeficinete r^2 de la segunda regresion:" +""+ label_reg_2)
+
+linear_regressor_3 = LinearRegression()
+regresion_3 = linear_regressor_3.fit(p_sflow, p_min)
+p_min_pred = linear_regressor_3.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_3= r2_score(p_lap, p_min_pred)
+r_2_3 = "%.4f" % r2_3
+label_reg_3 = r"$r^2$ = " + "" +  str(r_2_3)
+print("coeficinete r^2 de la tercer regresion:" +""+label_reg_3)
+
+fig = plt.figure()
+plt.grid()
+plt.scatter(dataframe['PSFLOW'], dataframe['PLAP'],label=" "r"$\nabla^2 \rho$ promedio")
+plt.plot(p_sflow, p_lap_pred, color='royalblue')
+texto1 = plt.text(0.075, 20, label_reg_1, color= 'royalblue', fontsize = 18) #Poner texto dentro de l imagen
+plt.scatter(dataframe['PSFLOW'], dataframe['MÁXIMO'], color='darkorange',label=" "r"$\nabla^2 \rho$ maximos")
+plt.plot(p_sflow, p_max_pred, color='darkorange')
+texto2 = plt.text(0.140, 20, label_reg_2, color= 'darkorange', fontsize = 18)
+plt.scatter(dataframe['PSFLOW'], dataframe['MÍNIMO'], color='green',label=" "r"$\nabla^2 \rho$ minimos")
+plt.plot(p_sflow, p_min_pred, color='green')
+texto3 = plt.text(0.125, 17, label_reg_3, color= 'green', fontsize = 18)
+plt.xlabel("Flujo de corriente eléctrica  / A", fontsize=12)
+plt.ylabel("Valores del laplaciano", fontsize=12)
+plt.legend(prop = {'size':10}, loc = 'upper left')
+plt.savefig("Ni_2mas" +".png")
+plt.show()
+
+###############################################################333
+print("Leyendo la cuarta hoja...")
+
+dataframe = pd.read_excel("datos.xlsx",  sheet_name="Ni_2menos")
+print(dataframe.head())  # esto te imprime los primeros 5 elementos
+
+p_sflow = dataframe['PSFLOW'].values.reshape(-1,1) #definimos los datos en un array
+p_lap = dataframe['PLAP'].values.reshape(-1,1)
+p_max = dataframe['MÁXIMO'].values.reshape(-1,1)
+p_min = dataframe['MÍNIMO'].values.reshape(-1,1)
+
+linear_regressor_1 = LinearRegression()
+regresion_1 = linear_regressor_1.fit(p_sflow, p_lap)
+p_lap_pred = linear_regressor_1.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_1= r2_score(p_lap, p_lap_pred)
+r_2_1 = "%.4f" % r2_1
+label_reg_1 = r"$r^2$ = " + "" +  str(r_2_1)
+print("coeficinete r^2 de la primer regresion:" +""+ label_reg_1)
+
+linear_regressor_2 = LinearRegression()
+regresion_2 = linear_regressor_2.fit(p_sflow, p_max)
+p_max_pred = linear_regressor_2.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_2= r2_score(p_lap, p_max_pred)
+r_2_2 = "%.4f" % r2_2
+label_reg_2 = r"$r^2$ = " + "" +  str(r_2_2)
+print("coeficinete r^2 de la segunda regresion:" +""+ label_reg_2)
+
+linear_regressor_3 = LinearRegression()
+regresion_3 = linear_regressor_3.fit(p_sflow, p_min)
+p_min_pred = linear_regressor_3.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_3= r2_score(p_lap, p_min_pred)
+r_2_3 = "%.4f" % r2_3
+label_reg_3 = r"$r^2$ = " + "" +  str(r_2_3)
+print("coeficinete r^2 de la tercer regresion:" +""+label_reg_3)
+
+fig = plt.figure()
+plt.grid()
+plt.scatter(dataframe['PSFLOW'], dataframe['PLAP'],label=" "r"$\nabla^2 \rho$ promedio")
+plt.plot(p_sflow, p_lap_pred, color='royalblue')
+texto1 = plt.text(0.08, 22, label_reg_1, color= 'royalblue', fontsize = 18) #Poner texto dentro de l imagen
+plt.scatter(dataframe['PSFLOW'], dataframe['MÁXIMO'], color='darkorange',label=" "r"$\nabla^2 \rho$ maximos")
+plt.plot(p_sflow, p_max_pred, color='darkorange')
+texto2 = plt.text(0.15, 22, label_reg_2, color= 'darkorange', fontsize = 18)
+plt.scatter(dataframe['PSFLOW'], dataframe['MÍNIMO'], color='green',label=" "r"$\nabla^2 \rho$ minimos")
+plt.plot(p_sflow, p_min_pred, color='green')
+texto3 = plt.text(0.15, 25, label_reg_3, color= 'green', fontsize = 18)
+plt.xlabel("Flujo de corriente eléctrica / A", fontsize=12)
+plt.ylabel("Valores del laplaciano", fontsize=12)
+plt.legend(prop = {'size':10}, loc = 'upper left')
+plt.savefig("Ni_2menos" +".png")
+plt.show()
+###############################################################333
+print("Leyendo la quinta hoja... fosfinas del Ni")
+
+dataframe = pd.read_excel("datos.xlsx",  sheet_name="Ni_fosfinas")
+print(dataframe.head())  # esto te imprime los primeros 5 elementos
+
+p_sflow = dataframe['PSFLOW'].values.reshape(-1,1) #definimos los datos en un array
+p_lap = dataframe['PLAP'].values.reshape(-1,1)
+p_max = dataframe['MÁXIMO'].values.reshape(-1,1)
+p_min = dataframe['MÍNIMO'].values.reshape(-1,1)
+
+linear_regressor_1 = LinearRegression()
+regresion_1 = linear_regressor_1.fit(p_sflow, p_lap)
+p_lap_pred = linear_regressor_1.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_1= r2_score(p_lap, p_lap_pred)
+r_2_1 = "%.4f" % r2_1
+label_reg_1 = r"$r^2$ = " + "" +  str(r_2_1)
+print("coeficinete r^2 de la primer regresion:" +""+ label_reg_1)
+
+linear_regressor_2 = LinearRegression()
+regresion_2 = linear_regressor_2.fit(p_sflow, p_max)
+p_max_pred = linear_regressor_2.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_2= r2_score(p_lap, p_max_pred)
+r_2_2 = "%.4f" % r2_2
+label_reg_2 = r"$r^2$ = " + "" +  str(r_2_2)
+print("coeficinete r^2 de la segunda regresion:" +""+ label_reg_2)
+
+linear_regressor_3 = LinearRegression()
+regresion_3 = linear_regressor_3.fit(p_sflow, p_min)
+p_min_pred = linear_regressor_3.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_3= r2_score(p_lap, p_min_pred)
+r_2_3 = "%.4f" % r2_3
+label_reg_3 = r"$r^2$ = " + "" +  str(r_2_3)
+print("coeficinete r^2 de la tercer regresion:" +""+label_reg_3)
+
+fig = plt.figure()
+plt.grid()
+plt.scatter(dataframe['PSFLOW'], dataframe['PLAP'],label=" "r"$\nabla^2 \rho$ promedio")
+plt.plot(p_sflow, p_lap_pred, color='royalblue')
+texto1 = plt.text(26, 17.45, label_reg_1, color= 'royalblue', fontsize = 18) #Poner texto dentro de l imagen
+plt.scatter(dataframe['PSFLOW'], dataframe['MÁXIMO'], color='darkorange',label=" "r"$\nabla^2 \rho$ maximos")
+plt.plot(p_sflow, p_max_pred, color='darkorange')
+texto2 = plt.text(26, 17.4, label_reg_2, color= 'darkorange', fontsize = 18)
+plt.scatter(dataframe['PSFLOW'], dataframe['MÍNIMO'], color='green',label=" "r"$\nabla^2 \rho$ minimos")
+plt.plot(p_sflow, p_min_pred, color='green')
+texto3 = plt.text(26, 17.35, label_reg_3, color= 'green', fontsize = 18)
+plt.xlabel("Flujo de corriente eléctrica ($x10^{-3}$) / A", fontsize=12)
+plt.ylabel("Valores del laplaciano", fontsize=12)
+plt.legend(prop = {'size':10}, loc = 'upper right')
+plt.savefig("Ni_fosfinas" +".png")
+plt.show()
+
+###############################################################333
+print("Leyendo la sexta hoja...")
+
+dataframe = pd.read_excel("datos.xlsx",  sheet_name="Pd_fosfinas")
+print(dataframe.head())  # esto te imprime los primeros 5 elementos
+
+p_sflow = dataframe['PSFLOW'].values.reshape(-1,1) #definimos los datos en un array
+p_lap = dataframe['PLAP'].values.reshape(-1,1)
+p_max = dataframe['MÁXIMO'].values.reshape(-1,1)
+p_min = dataframe['MÍNIMO'].values.reshape(-1,1)
+
+linear_regressor_1 = LinearRegression()
+regresion_1 = linear_regressor_1.fit(p_sflow, p_lap)
+p_lap_pred = linear_regressor_1.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_1= r2_score(p_lap, p_lap_pred)
+r_2_1 = "%.4f" % r2_1
+label_reg_1 = r"$r^2$ = " + "" +  str(r_2_1)
+print("coeficinete r^2 de la primer regresion:" +""+ label_reg_1)
+
+linear_regressor_2 = LinearRegression()
+regresion_2 = linear_regressor_2.fit(p_sflow, p_max)
+p_max_pred = linear_regressor_2.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_2= r2_score(p_lap, p_max_pred)
+r_2_2 = "%.4f" % r2_2
+label_reg_2 = r"$r^2$ = " + "" +  str(r_2_2)
+print("coeficinete r^2 de la segunda regresion:" +""+ label_reg_2)
+
+linear_regressor_3 = LinearRegression()
+regresion_3 = linear_regressor_3.fit(p_sflow, p_min)
+p_min_pred = linear_regressor_3.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_3= r2_score(p_lap, p_min_pred)
+r_2_3 = "%.4f" % r2_3
+label_reg_3 = r"$r^2$ = " + "" +  str(r_2_3)
+print("coeficinete r^2 de la tercer regresion:" +""+label_reg_3)
+
+fig = plt.figure()
+plt.grid()
+plt.scatter(dataframe['PSFLOW'], dataframe['PLAP'],label=" "r"$\nabla^2 \rho$ promedio")
+plt.plot(p_sflow, p_lap_pred, color='royalblue')
+texto1 = plt.text(1, 7, label_reg_1, color= 'royalblue', fontsize = 18) #Poner texto dentro de l imagen
+plt.scatter(dataframe['PSFLOW'], dataframe['MÁXIMO'], color='darkorange',label=" "r"$\nabla^2 \rho$ maximos")
+plt.plot(p_sflow, p_max_pred, color='darkorange')
+texto2 = plt.text(1, 6.5, label_reg_2, color= 'darkorange', fontsize = 18)
+plt.scatter(dataframe['PSFLOW'], dataframe['MÍNIMO'], color='green',label=" "r"$\nabla^2 \rho$ minimos")
+plt.plot(p_sflow, p_min_pred, color='green')
+texto3 = plt.text(1, 6, label_reg_3, color= 'green', fontsize = 18)
+plt.xlabel("Flujo de corriente eléctrica ($x10^{-3}$) / A", fontsize=12)
+plt.ylabel("Valores del laplaciano", fontsize=12)
+plt.legend(prop = {'size':10}, loc = 'upper right')
+plt.savefig("Pd_fosfinas" +".png")
+plt.show()
+
+###############################################################333
+print("Leyendo la septima hoja...")
+
+dataframe = pd.read_excel("datos.xlsx",  sheet_name="isomeros_123")
+print(dataframe.head())  # esto te imprime los primeros 5 elementos
+
+p_sflow = dataframe['PSFLOW'].values.reshape(-1,1) #definimos los datos en un array
+p_lap = dataframe['PLAP'].values.reshape(-1,1)
+p_max = dataframe['MÁXIMO'].values.reshape(-1,1)
+p_min = dataframe['MÍNIMO'].values.reshape(-1,1)
+
+linear_regressor_1 = LinearRegression()
+regresion_1 = linear_regressor_1.fit(p_sflow, p_lap)
+p_lap_pred = linear_regressor_1.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_1= r2_score(p_lap, p_lap_pred)
+r_2_1 = "%.4f" % r2_1
+label_reg_1 = r"$r^2$ = " + "" +  str(r_2_1)
+print("coeficinete r^2 de la primer regresion:" +""+ label_reg_1)
+
+linear_regressor_2 = LinearRegression()
+regresion_2 = linear_regressor_2.fit(p_sflow, p_max)
+p_max_pred = linear_regressor_2.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_2= r2_score(p_lap, p_max_pred)
+r_2_2 = "%.4f" % r2_2
+label_reg_2 = r"$r^2$ = " + "" +  str(r_2_2)
+print("coeficinete r^2 de la segunda regresion:" +""+ label_reg_2)
+
+linear_regressor_3 = LinearRegression()
+regresion_3 = linear_regressor_3.fit(p_sflow, p_min)
+p_min_pred = linear_regressor_3.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_3= r2_score(p_lap, p_min_pred)
+r_2_3 = "%.4f" % r2_3
+label_reg_3 = r"$r^2$ = " + "" +  str(r_2_3)
+print("coeficinete r^2 de la tercer regresion:" +""+label_reg_3)
+
+fig = plt.figure()
+plt.grid()
+plt.scatter(dataframe['PSFLOW'], dataframe['PLAP'],label=" "r"$\nabla^2 \rho$ promedio")
+plt.plot(p_sflow, p_lap_pred, color='royalblue')
+texto1 = plt.text(2, 5.5, label_reg_1, color= 'royalblue', fontsize = 18) #Poner texto dentro de l imagen
+plt.scatter(dataframe['PSFLOW'], dataframe['MÁXIMO'], color='darkorange',label=" "r"$\nabla^2 \rho$ maximos")
+plt.plot(p_sflow, p_max_pred, color='darkorange')
+texto2 = plt.text(2, 6.5, label_reg_1, color= 'darkorange', fontsize = 18)
+plt.scatter(dataframe['PSFLOW'], dataframe['MÍNIMO'], color='green',label=" "r"$\nabla^2 \rho$ minimos")
+plt.plot(p_sflow, p_min_pred, color='green')
+texto3 = plt.text(7, 5.5, label_reg_1, color= 'green', fontsize = 18)
+plt.xlabel("Flujo de corriente eléctrica ($x10^{-3}$) / A", fontsize=12)
+plt.ylabel("Valores del laplaciano", fontsize=12)
+plt.legend(prop = {'size':10}, loc = 'upper right')
+plt.savefig("isomeros_123" +".png")
+plt.show()
+
+#######################################################################################
+print("Leyendo la octava hoja...")
+
+dataframe = pd.read_excel("datos.xlsx",  sheet_name="velocidad_flujo")
+print(dataframe.head())  # esto te imprime los primeros 5 elementos
+
+v_electron = dataframe['Velocidad'].values.reshape(-1,1)
+min_max = dataframe['PSFLOW'].values.reshape(-1,1)
+
+linear_regressor_1 = LinearRegression()
+regresion_1 = linear_regressor_1.fit(v_electron, min_max)
+m = linear_regressor_1.coef_
+b = linear_regressor_1.intercept_
+
+v_electron_pred = m * v_electron + b #Predigo el valor promedio del laplaciano
+print(v_electron_pred)
+
+r2_1= linear_regressor_1.score(v_electron, min_max)
+r_2_1 = "%.4f" % r2_1
+label_reg_1 = r"$r^2$ = " + "" +  str(r_2_1)
+print("coeficinete r^2 de la primer regresion:" +""+ label_reg_1)
+
+plt.grid()
+plt.scatter(dataframe['Velocidad'], dataframe['PSFLOW'], color='green',label=" "r"$\nabla^2 \rho$ promedio")
+plt.plot(v_electron, v_electron_pred, color='green')
+plt.ylabel("Flujo de corriente eléctrica ($x10^{-3}$) / A", fontsize=12)
+plt.xlabel("Velocidad de los electrones", fontsize=12)
+texto1 = plt.text(0, 30, label_reg_1, color= 'green', fontsize = 18)
+plt.legend(prop = {'size':10}, loc = 'upper left')
+plt.savefig("velocidad_flujo" +".png")
+plt.show()
+
+###############################################################333
+print("Leyendo la novena hoja...")
+
+dataframe = pd.read_excel("datos.xlsx",  sheet_name="Pd_2menos")
+print(dataframe.head())  # esto te imprime los primeros 5 elementos
+
+p_sflow = dataframe['PSFLOW'].values.reshape(-1,1) #definimos los datos en un array
+p_lap = dataframe['PLAP'].values.reshape(-1,1)
+p_max = dataframe['MÁXIMO'].values.reshape(-1,1)
+p_min = dataframe['MÍNIMO'].values.reshape(-1,1)
+
+linear_regressor_1 = LinearRegression()
+regresion_1 = linear_regressor_1.fit(p_sflow, p_lap)
+p_lap_pred = linear_regressor_1.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_1= r2_score(p_lap, p_lap_pred)
+r_2_1 = "%.4f" % r2_1
+label_reg_1 = r"$r^2$ = " + "" +  str(r_2_1)
+print("coeficinete r^2 de la primer regresion:" +""+ label_reg_1)
+
+linear_regressor_2 = LinearRegression()
+regresion_2 = linear_regressor_2.fit(p_sflow, p_max)
+p_max_pred = linear_regressor_2.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_2= r2_score(p_lap, p_max_pred)
+r_2_2 = "%.4f" % r2_2
+label_reg_2 = r"$r^2$ = " + "" +  str(r_2_2)
+print("coeficinete r^2 de la segunda regresion:" +""+ label_reg_2)
+
+linear_regressor_3 = LinearRegression()
+regresion_3 = linear_regressor_3.fit(p_sflow, p_min)
+p_min_pred = linear_regressor_3.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_3= r2_score(p_lap, p_min_pred)
+r_2_3 = "%.4f" % r2_3
+label_reg_3 = r"$r^2$ = " + "" +  str(r_2_3)
+print("coeficinete r^2 de la tercer regresion:" +""+label_reg_3)
+
+fig = plt.figure()
+plt.grid()
+plt.scatter(dataframe['PSFLOW'], dataframe['PLAP'],label=" "r"$\nabla^2 \rho$ promedio")
+plt.plot(p_sflow, p_lap_pred, color='royalblue')
+texto1 = plt.text(10, 6, label_reg_1, color= 'royalblue', fontsize = 18) #Poner texto dentro de l imagen
+plt.scatter(dataframe['PSFLOW'], dataframe['MÁXIMO'], color='darkorange',label=" "r"$\nabla^2 \rho$ maximos")
+plt.plot(p_sflow, p_max_pred, color='darkorange')
+texto2 = plt.text(10, 4, label_reg_2, color= 'darkorange', fontsize = 18)
+plt.scatter(dataframe['PSFLOW'], dataframe['MÍNIMO'], color='green',label=" "r"$\nabla^2 \rho$ minimos")
+plt.plot(p_sflow, p_min_pred, color='green')
+texto3 = plt.text(10, 2, label_reg_3, color= 'green', fontsize = 18)
+plt.xlabel("Flujo de corriente eléctrica ($x10^{-3}$) / A", fontsize=12)
+plt.ylabel("Valores del laplaciano", fontsize=12)
+plt.legend(prop = {'size':10}, loc = 'upper right')
+plt.savefig("Pd_2menos" +".png")
+plt.show()
+
+###############################################################333
+print("Leyendo la decima hoja...")
+
+dataframe = pd.read_excel("datos.xlsx",  sheet_name="Pd_2mas")
+print(dataframe.head())  # esto te imprime los primeros 5 elementos
+
+p_sflow = dataframe['PSFLOW'].values.reshape(-1,1) #definimos los datos en un array
+p_lap = dataframe['PLAP'].values.reshape(-1,1)
+p_max = dataframe['MÁXIMO'].values.reshape(-1,1)
+p_min = dataframe['MÍNIMO'].values.reshape(-1,1)
+
+linear_regressor_1 = LinearRegression()
+regresion_1 = linear_regressor_1.fit(p_sflow, p_lap)
+p_lap_pred = linear_regressor_1.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_1= r2_score(p_lap, p_lap_pred)
+r_2_1 = "%.4f" % r2_1
+label_reg_1 = r"$r^2$ = " + "" +  str(r_2_1)
+print("coeficinete r^2 de la primer regresion:" +""+ label_reg_1)
+
+linear_regressor_2 = LinearRegression()
+regresion_2 = linear_regressor_2.fit(p_sflow, p_max)
+p_max_pred = linear_regressor_2.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_2= r2_score(p_lap, p_max_pred)
+r_2_2 = "%.4f" % r2_2
+label_reg_2 = r"$r^2$ = " + "" +  str(r_2_2)
+print("coeficinete r^2 de la segunda regresion:" +""+ label_reg_2)
+
+linear_regressor_3 = LinearRegression()
+regresion_3 = linear_regressor_3.fit(p_sflow, p_min)
+p_min_pred = linear_regressor_3.predict(p_sflow) #Predigo el valor promedio del laplaciano
+
+r2_3= r2_score(p_lap, p_min_pred)
+r_2_3 = "%.4f" % r2_3
+label_reg_3 = r"$r^2$ = " + "" +  str(r_2_3)
+print("coeficinete r^2 de la tercer regresion:" +""+label_reg_3)
+
+fig = plt.figure()
+plt.grid()
+plt.scatter(dataframe['PSFLOW'], dataframe['PLAP'],label=" "r"$\nabla^2 \rho$ promedio")
+plt.plot(p_sflow, p_lap_pred, color='royalblue')
+texto1 = plt.text(50, 11, label_reg_1, color= 'royalblue', fontsize = 18) #Poner texto dentro de l imagen
+plt.scatter(dataframe['PSFLOW'], dataframe['MÁXIMO'], color='darkorange',label=" "r"$\nabla^2 \rho$ maximos")
+plt.plot(p_sflow, p_max_pred, color='darkorange')
+texto2 = plt.text(50, 10, label_reg_2, color= 'darkorange', fontsize = 18)
+plt.scatter(dataframe['PSFLOW'], dataframe['MÍNIMO'], color='green',label=" "r"$\nabla^2 \rho$ minimos")
+plt.plot(p_sflow, p_min_pred, color='green')
+texto3 = plt.text(50, 9, label_reg_3, color= 'green', fontsize = 18)
+plt.xlabel("Flujo de corriente eléctrica ($x10^{-3}$) / A", fontsize=12)
+plt.ylabel("Valores del laplaciano", fontsize=12)
+plt.legend(prop = {'size':10}, loc = 'upper right')
+plt.savefig("Pd_2mas" +".png")
+plt.show()
